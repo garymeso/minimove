@@ -7,10 +7,6 @@ on:
       - "*-debug"
     tags:
       - "v*"
-    paths:
-      - "**.go"
-      - "go.mod"
-      - "go.sum"
 
 permissions: write-all
 
