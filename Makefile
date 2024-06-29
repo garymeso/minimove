@@ -115,7 +115,7 @@ build: go.sum
 ifeq ($(OS),Windows_NT)
 	exit 1
 else
-	go build -mod=readonly $(BUILD_FLAGS) -o build/minitiad ./cmd/minitiad
+	go build -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" -o build/minitiad ./cmd/minitiad
 endif
 
 build-linux:

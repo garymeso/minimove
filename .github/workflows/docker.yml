@@ -1,58 +1,38 @@
-name: Docker
-
+name: Build and Publish Docker Image
 on:
-  workflow_dispatch:
+  release:
+    types: [ published ]
   push:
     branches:
-      - "main"
+      - "*-debug"
     tags:
       - "v*"
     paths:
       - "**.go"
       - "go.mod"
       - "go.sum"
-  pull_request:
-    branches:
-      - "main"
-    paths:
-      - "**.go"
-      - "go.mod"
-      - "go.sum"
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: minimove
+permissions: write-all
 
 jobs:
-  minitiad:
-    name: Minitiad
+  docker_publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Log in to the Container registry
+      - uses: actions/checkout@v3
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
-
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
-          build-args: "GITHUB_ACCESS_TOKEN=${{ secrets.GH_READ_TOKEN }}"
-          file: images/private/Dockerfile
-          push: ${{ startsWith(github.ref, 'refs/tags') }} # push image only for tags
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.ref_name }}
